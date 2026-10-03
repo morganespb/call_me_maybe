@@ -12,21 +12,21 @@ def next_state(state: DecoderState) -> DecoderState:
     if state == DecoderState.START:
         return DecoderState.FUNCTION_NAME
     if state == DecoderState.FUNCTION_NAME:
-        return DecoderState.PARAMETERS
+        return DecoderState.PARAMETERS_START:
     if state == DecoderState.PARAMETERS_START:
         return DecoderState.PARAMETERS
     if state == DecoderState.PARAMETERS:
         return DecoderState.DONE
     return DecoderState.DONE
 
-def get_state(current: str) -> DecoderState:
-    if current == "":
-        return DecoderState.START
-    if '"name":' in current and '"parameters":' not in current:
-        return DecoderState.FUNCTION_NAME
-    if '"parameters":' in current:
-        return DecoderState.PARAMETERS
-    return DecoderState.START
+#def get_state(current: str) -> DecoderState:
+#    if current == "":
+#        return DecoderState.START
+#    if '"name":' in current and '"parameters":' not in current:
+#        return DecoderState.FUNCTION_NAME
+#    if '"parameters":' in current:
+#        return DecoderState.PARAMETERS
+#    return DecoderState.START
 
 def get_targets(state: DecoderState, function_names: list[str]) -> list[str]:
     if state == DecoderState.START:
@@ -34,17 +34,17 @@ def get_targets(state: DecoderState, function_names: list[str]) -> list[str]:
     if state == DecoderState.FUNCTION_NAME:
         return [f'"{name}"' for name in function_names]
     if state == DecoderState.PARAMETERS_START:
-        return ['"parameters":{']
+        return [',"parameters":{']
 
     return []
 
-def mask_logits(logits: list[float], valid_ids: set[int]) -> list[float]:
-    masked = logits.copy()
-
-    for token_id in range(len(masked)):
-        if token_id not in valid_ids:
-            masked[token_id] = float("-inf")
-    return masked
+#def mask_logits(logits: list[float], valid_ids: set[int]) -> list[float]:
+#    masked = logits.copy()
+#
+#    for token_id in range(len(masked)):
+#        if token_id not in valid_ids:
+#            masked[token_id] = float("-inf")
+#    return masked
 
 def select_best_token(logits: list[float], valid_ids: set[int]) -> int:
     if not valid_ids:
