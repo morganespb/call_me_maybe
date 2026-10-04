@@ -1,10 +1,11 @@
 from src.vocabulary import load_vocabulary
-
 from .parsing import load_functions, load_prompts
 from llm_sdk import Small_LLM_Model
 
+
 FUNCTIONS_PATH = "data/input/functions_definition.json"
 PROMPTS_PATH = "data/input/function_calling_tests.json"
+
 
 def main() -> None:
     try:
@@ -25,6 +26,7 @@ def main() -> None:
     print(type(vocab))
     print(len(vocab))
     print(list(vocab.items())[:20])
+
 
 if __name__ == "__main__":
     main()
