@@ -1,9 +1,7 @@
 from enum import Enum, auto
+from src.rules import get_valid_number_token_ids, get_string_value_ids
 
 
-# what part of the output we generating now ?
-# segment: current stage
-# current: whole output so far
 class DecoderState(Enum):
     START = auto()
     FUNCTION_NAME = auto()
@@ -13,6 +11,7 @@ class DecoderState(Enum):
 
 
 def next_state(state: DecoderState) -> DecoderState:
+    """Advance to the next state"""
     if state == DecoderState.START:
         return DecoderState.FUNCTION_NAME
     if state == DecoderState.FUNCTION_NAME:
@@ -25,6 +24,7 @@ def next_state(state: DecoderState) -> DecoderState:
 
 
 def get_targets(state: DecoderState, function_names: list[str]) -> list[str]:
+    """Get current state target"""
     if state == DecoderState.START:
         return ['{"name":']
     if state == DecoderState.FUNCTION_NAME:
@@ -35,8 +35,8 @@ def get_targets(state: DecoderState, function_names: list[str]) -> list[str]:
 
 
 def mask_logits(logits: list[float], valid_ids: set[int]) -> list[float]:
+    """Set to -inf the illegal logits"""
     masked = logits.copy()
-
     for token_id in range(len(masked)):
         if token_id not in valid_ids:
             masked[token_id] = float("-inf")
@@ -44,6 +44,7 @@ def mask_logits(logits: list[float], valid_ids: set[int]) -> list[float]:
 
 
 def select_best_token(logits: list[float], valid_ids: set[int]) -> int:
+    """Select token with the highest score"""
     if not valid_ids:
         raise ValueError("No valid token available")
     return max(valid_ids, key=lambda token_id: logits[token_id])
@@ -52,6 +53,7 @@ def select_best_token(logits: list[float], valid_ids: set[int]) -> int:
 # only keep tokens that continue a target
 def get_valid_token_ids(vocab: dict[str, int], segment: str,
                         targets: list[str]) -> set[int]:
+    """Constrained decoding to only allow tokens with corresponding prefix"""
     valid_ids: set[int] = set()
     for token, token_id in vocab.items():
         candidate = segment + token
@@ -62,29 +64,21 @@ def get_valid_token_ids(vocab: dict[str, int], segment: str,
     return valid_ids
 
 
-def number_next_chars(value: str, is_last: bool) -> set[str]:
-    digits = set("0123456789")
-    if value == "":
-        return digits | {"-"}
-    if value == "-" or value.endswith("."):
-        return digits
-    allowed = set(digits)
-    if "." not in value:
-        allowed.add(".")
-    allowed.add("}" if is_last else ",")
-    return allowed
-
-
-def get_valid_number_token_ids(vocab: dict[str, int], value: str,
-                               is_last: bool) -> set[int]:
-    allowed = number_next_chars(value, is_last)
-    valid_ids = set()
-    for token, token_id in vocab.items():
-        if token in allowed:
-            valid_ids.add(token_id)
-    return valid_ids
-
-
-def value_written(segment: str) -> bool:
+def value_written(segment: str, param_type: str) -> bool:
     """The parameter value has been written ? it has to end with ',' or '}'"""
-    return segment != "" and segment[-1] in ",}"
+    if segment == "" or segment[-1] not in ",}":
+        return False
+    if param_type == "string":
+        return segment.count('"') == 2
+    return True
+
+
+def get_parameter_valid_ids(vocab: dict[str, int], segment: str, name: str,
+                            key_written: bool, is_last: bool, param_type: str,
+                            safe_ids: set[int]) -> set[int]:
+    """Which tokens are valid for the current parameters ?"""
+    if not key_written:
+        return get_valid_token_ids(vocab, segment, [f'"{name}":'])
+    if param_type == "string":
+        return get_string_value_ids(vocab, segment, is_last, safe_ids)
+    return get_valid_number_token_ids(vocab, segment, is_last)

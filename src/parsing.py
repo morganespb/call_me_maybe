@@ -6,6 +6,7 @@ from .models import FunctionDefinition, Prompt
 
 
 def load_json(path: str) -> object:
+    """Load date from JSON file"""
     try:
         with open(path, "r") as file:
             return json.load(file)
@@ -17,6 +18,7 @@ def load_json(path: str) -> object:
 
 def load_functions(path: str) -> list[FunctionDefinition]:
     data = load_json(path)
+    """Checking and validate FunctionDefinition"""
     if not isinstance(data, list):
         raise ValueError("Functions file must contain a JSON array")
     try:
@@ -26,6 +28,7 @@ def load_functions(path: str) -> list[FunctionDefinition]:
 
 
 def load_prompts(path: str) -> list[Prompt]:
+    """Checking and validate prompts"""
     data = load_json(path)
 
     if not isinstance(data, list):

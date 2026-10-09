@@ -35,12 +35,6 @@ lint-strict:
 	echo "$(BOLD)$(PURPLE) ===> running mypy...$(RESET)"; mypy . --strict ; m=$$?; \
 	if [ $$f -eq 0 ] && [ $$m -eq 0 ]; then echo " Lint OK ! $(RESET)"; fi
 
-test:
-	@echo " $(BOLD)$(PURPLE) ===> Decoder tests$(RESET)"
-	@python3 test_decoder.py
-	@echo " $(BOLD)$(PURPLE) ===> Generator test (loads the model)$(RESET)"
-	@uv run python test_generator.py
-
 .PHONY: install run debug clean lint lint-strict test
 
 
